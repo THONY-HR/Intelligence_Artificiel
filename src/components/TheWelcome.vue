@@ -110,31 +110,51 @@ const renderMarkdown = (content) => {
   --primary: #2c3e50;
   --secondary: #3498db;
   --background: #f9f9f9;
-  --text: #34495e;
-  --shadow: 0 2px 15px rgba(0,0,0,0.1);
+  --text: #ecf0f1; /* couleur du texte sur fond sombre */
+  --shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+  --border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+body {
+  background: var(--background);
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Container principal de la discussion */
 .chat-container {
   max-width: 800px;
-  margin: 2rem auto;
+  margin: 3rem auto;
   padding: 2rem;
-  background: black;
+  background: #1c1c1c;
   border-radius: 1.5rem;
   box-shadow: var(--shadow);
+  border: var(--border);
 }
 
+/* En-tête */
+header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--primary);
+}
+
+/* Fenêtre de chat */
 .chat-window {
   height: 60vh;
   overflow-y: auto;
   padding: 1rem;
-  background: black;
+  background: #252525;
   border-radius: 1rem;
   margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  border: var(--border);
 }
 
+/* Styles pour les messages */
 .message {
   display: flex;
 }
@@ -147,39 +167,41 @@ const renderMarkdown = (content) => {
   justify-content: flex-start;
 }
 
-
+/* Bulles de discussion */
 .bubble {
   max-width: 70%;
   padding: 1rem 1.5rem;
   border-radius: 1.5rem;
   line-height: 1.5;
+  transition: background 0.3s ease, transform 0.3s ease;
 }
 
 .message.user .bubble {
   background: var(--secondary);
-  color: rgb(201, 198, 198);
+  color: #fff;
   border-radius: 1.5rem 1.5rem 0 1.5rem;
 }
 
 .message.assistant .bubble {
-  background: black;
+  background: #333;
   color: var(--text);
   box-shadow: var(--shadow);
   border-radius: 1.5rem 1.5rem 1.5rem 0;
 }
 
-/* Markdown styling */
-:deep(.bubble) h1, :deep(.bubble) h2, :deep(.bubble) h3 {
+/* Styling pour le Markdown */
+:deep(.bubble) h1,
+:deep(.bubble) h2,
+:deep(.bubble) h3 {
   color: var(--primary);
   margin: 1rem 0;
 }
 
 :deep(.bubble) code {
-  background: #80eb6d27;
+  background: rgba(128, 235, 109, 0.15);
   padding: 0.2em 0.4em;
   border-radius: 3px;
   font-family: 'Fira Code', monospace;
-  position: relative;
 }
 
 :deep(.bubble) pre {
@@ -189,21 +211,21 @@ const renderMarkdown = (content) => {
   border-radius: 0.5rem;
   overflow-x: auto;
   margin: 1rem 0;
-  position: relative;
 }
 
 :deep(.bubble) pre code {
-  background: none;
+  background: transparent;
   padding: 0;
 }
 
+/* Bouton de copie pour les blocs de code */
 .copy-button {
   position: absolute;
   right: 0.5rem;
   top: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: black;
+  color: #fff;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   cursor: pointer;
@@ -214,7 +236,7 @@ const renderMarkdown = (content) => {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Input */
+/* Conteneur de l'entrée utilisateur */
 .input-container {
   display: flex;
   gap: 1rem;
@@ -257,15 +279,45 @@ button:disabled {
   cursor: not-allowed;
 }
 
+
 @media (max-width: 768px) {
   .chat-container {
-    margin: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
     padding: 1rem;
+    border-radius: 0;
   }
-  
+
+  .chat-window {
+    height: 50vh;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+  }
+
   .bubble {
-    max-width: 85%;
+    max-width: 90%;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .input-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  input {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem;
   }
 }
+
 </style>
 <!-- ajouter une css a cette code et donne moi le code au complet , je veux que tu ajoute une effet de frappe pas trop long, -->
