@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { postData } from '../utils/api.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -8,7 +8,13 @@ import DOMPurify from 'dompurify';
 const messages = ref([]);
 const userMessage = ref('');
 const isLoading = ref(false);
+const typingMessage = ref('');
+const isTyping = ref(false);
+const chatWindow = ref(null);
 const API_KEY = "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"; // Remplace par ta clé API
+
+// Identifiant de l'intervalle de frappe
+let typingInterval = null;
 
 // Configuration de marked
 marked.setOptions({
@@ -16,20 +22,19 @@ marked.setOptions({
   highlight: (code) => hljs.highlightAuto(code).value
 });
 
-// Envoyer un message
+// Envoyer un message (se déclenche si l'assistant ne tape pas)
 const sendMessage = async () => {
-  if (!userMessage.value.trim() || isLoading.value) return;
+  if (!userMessage.value.trim() || isLoading.value || isTyping.value) return;
 
   isLoading.value = true;
   const userMessageContent = userMessage.value.trim();
-
   messages.value.push({ role: 'user', content: userMessageContent });
 
   const payload = {
     model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
-    messages: [{ 
-  role: 'user', 
-  content: `À partir de maintenant, tu répondras aux questions sur ton créateur, Anthony Rantonirina, en utilisant ces informations :
+    messages: [{
+      role: 'user',
+      content: `À partir de maintenant, tu répondras aux questions sur ton créateur, Anthony Rantonirina, en utilisant ces informations :
 - Nom : Rantonirina Anthony  
 - Âge : 21 ans  
 - Date de naissance : 6 novembre 2003 à 4 h du matin  
@@ -42,9 +47,9 @@ const sendMessage = async () => {
 Si quelqu'un te demande l'âge de ton créateur, réponds uniquement '21 ans'.  
 Si on te demande où il est né, réponds 'À Andilamena'.  
 Si on te demande son métier, réponds 'Développeur full stack web et UI/UX designer'.  
-Si la question concerne plusieurs informations, donne uniquement les réponses pertinentes.` 
-}
-,...messages.value],
+Si la question concerne plusieurs informations, donne uniquement les réponses pertinentes.`
+    },
+    ...messages.value],
     temperature: 0.7,
     max_tokens: 3000,
     stream: false
@@ -54,7 +59,7 @@ Si la question concerne plusieurs informations, donne uniquement les réponses p
     const response = await postData('v1/chat/completions', payload, API_KEY);
     if (response.choices && response.choices.length > 0) {
       const assistantMessage = response.choices[0].message.content;
-      messages.value.push({ role: 'assistant', content: assistantMessage });
+      simulateTyping(assistantMessage);
     } else {
       messages.value.push({ role: 'assistant', content: "Réponse non valide reçue." });
     }
@@ -66,12 +71,46 @@ Si la question concerne plusieurs informations, donne uniquement les réponses p
   }
 };
 
+// Effet de frappe simulé pour l'assistant avec défilement automatique
+const simulateTyping = (text) => {
+  typingMessage.value = '';
+  isTyping.value = true;
+  let index = 0;
+  typingInterval = setInterval(() => {
+    if (index < text.length) {
+      typingMessage.value += text[index];
+      index++;
+      // Défilement automatique vers le bas
+      nextTick(() => {
+        if (chatWindow.value) {
+          chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
+        }
+      });
+    } else {
+      clearInterval(typingInterval);
+      typingInterval = null;
+      isTyping.value = false;
+      messages.value.push({ role: 'assistant', content: typingMessage.value });
+      typingMessage.value = '';
+    }
+  }, 5); // Délai de 50ms entre chaque caractère
+};
+
+// Fonction pour annuler la saisie en cours
+const cancelTyping = () => {
+  if (typingInterval) {
+    clearInterval(typingInterval);
+    typingInterval = null;
+    isTyping.value = false;
+    typingMessage.value = ''; // Effacer le message partiellement tapé
+  }
+};
+
 // Rendu Markdown sécurisé
 const renderMarkdown = (content) => {
   return DOMPurify.sanitize(marked.parse(content));
 };
 </script>
-
 
 <template>
   <div class="chat-container">
@@ -80,9 +119,13 @@ const renderMarkdown = (content) => {
       <p>Posez vos questions à l'assistant intelligent</p>
     </header>
 
-    <div class="chat-window">
+    <div ref="chatWindow" class="chat-window">
       <div v-for="(message, index) in messages" :key="index" class="message" :class="message.role">
         <div class="bubble" v-html="message.role === 'assistant' ? renderMarkdown(message.content) : message.content"></div>
+      </div>
+      <!-- Affichage de l'effet de frappe -->
+      <div v-if="typingMessage" class="message assistant">
+        <div class="bubble" v-html="renderMarkdown(typingMessage)"></div>
       </div>
     </div>
 
@@ -92,11 +135,12 @@ const renderMarkdown = (content) => {
         v-model="userMessage" 
         placeholder="Écrivez votre message..."
         @keyup.enter="sendMessage"
-        :disabled="isLoading"
+        :disabled="isLoading || isTyping"
       />
-      <button @click="sendMessage" :disabled="isLoading">
-        <span>{{ isLoading ? 'Envoi...' : 'Envoyer' }}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+      <button @click="isTyping ? cancelTyping() : sendMessage()" :disabled="isLoading && !isTyping">
+        <span v-if="isTyping">■</span>
+        <span v-else>{{ isLoading ? 'Envoi...' : 'Envoyer' }}</span>
+        <svg v-if="!isTyping" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
           <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
         </svg>
       </button>
@@ -110,51 +154,31 @@ const renderMarkdown = (content) => {
   --primary: #2c3e50;
   --secondary: #3498db;
   --background: #f9f9f9;
-  --text: #ecf0f1; /* couleur du texte sur fond sombre */
-  --shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
-  --border: 1px solid rgba(255, 255, 255, 0.1);
+  --text: #34495e;
+  --shadow: 0 2px 15px rgba(0,0,0,0.1);
 }
 
-body {
-  background: var(--background);
-  font-family: 'Arial', sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-/* Container principal de la discussion */
 .chat-container {
   max-width: 800px;
-  margin: 3rem auto;
+  margin: 2rem auto;
   padding: 2rem;
-  background: #1c1c1c;
+  background: black;
   border-radius: 1.5rem;
   box-shadow: var(--shadow);
-  border: var(--border);
 }
 
-/* En-tête */
-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--primary);
-}
-
-/* Fenêtre de chat */
 .chat-window {
   height: 60vh;
   overflow-y: auto;
   padding: 1rem;
-  background: #252525;
+  background: black;
   border-radius: 1rem;
   margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border: var(--border);
 }
 
-/* Styles pour les messages */
 .message {
   display: flex;
 }
@@ -167,41 +191,38 @@ header {
   justify-content: flex-start;
 }
 
-/* Bulles de discussion */
 .bubble {
   max-width: 70%;
   padding: 1rem 1.5rem;
   border-radius: 1.5rem;
   line-height: 1.5;
-  transition: background 0.3s ease, transform 0.3s ease;
 }
 
 .message.user .bubble {
   background: var(--secondary);
-  color: #fff;
+  color: rgb(201, 198, 198);
   border-radius: 1.5rem 1.5rem 0 1.5rem;
 }
 
 .message.assistant .bubble {
-  background: #333;
+  background: black;
   color: var(--text);
   box-shadow: var(--shadow);
   border-radius: 1.5rem 1.5rem 1.5rem 0;
 }
 
-/* Styling pour le Markdown */
-:deep(.bubble) h1,
-:deep(.bubble) h2,
-:deep(.bubble) h3 {
+/* Markdown styling */
+:deep(.bubble) h1, :deep(.bubble) h2, :deep(.bubble) h3 {
   color: var(--primary);
   margin: 1rem 0;
 }
 
 :deep(.bubble) code {
-  background: rgba(128, 235, 109, 0.15);
+  background: #80eb6d27;
   padding: 0.2em 0.4em;
   border-radius: 3px;
   font-family: 'Fira Code', monospace;
+  position: relative;
 }
 
 :deep(.bubble) pre {
@@ -211,21 +232,21 @@ header {
   border-radius: 0.5rem;
   overflow-x: auto;
   margin: 1rem 0;
+  position: relative;
 }
 
 :deep(.bubble) pre code {
-  background: transparent;
+  background: none;
   padding: 0;
 }
 
-/* Bouton de copie pour les blocs de code */
 .copy-button {
   position: absolute;
   right: 0.5rem;
   top: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: #fff;
+  color: black;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   cursor: pointer;
@@ -236,7 +257,7 @@ header {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Conteneur de l'entrée utilisateur */
+/* Input */
 .input-container {
   display: flex;
   gap: 1rem;
@@ -279,7 +300,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-
 @media (max-width: 768px) {
   .chat-container {
     width: 100%;
@@ -320,4 +340,3 @@ button:disabled {
 }
 
 </style>
-<!-- ajouter une css a cette code et donne moi le code au complet , je veux que tu ajoute une effet de frappe pas trop long, -->
