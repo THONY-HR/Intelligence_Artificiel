@@ -11,8 +11,6 @@ const isLoading = ref(false);
 const typingMessage = ref('');
 const isTyping = ref(false);
 const chatWindow = ref(null);
-const API_KEY = "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"; // Remplace par ta clé API
-
 // Identifiant de l'intervalle de frappe
 let typingInterval = null;
 
@@ -21,6 +19,22 @@ marked.setOptions({
   breaks: true,
   highlight: (code) => hljs.highlightAuto(code).value
 });
+
+const copyToClipboard = (content) => {
+  if (!navigator.clipboard) {
+    console.error("Clipboard API non supportée par ce navigateur.");
+    return;
+  }
+
+  navigator.clipboard.writeText(content)
+    .then(() => {
+      console.log('Texte copié dans le presse-papiers !');
+    })
+    .catch(err => {
+      console.error('Erreur lors de la copie : ', err);
+    });
+};
+
 
 // Envoyer un message (se déclenche si l'assistant ne tape pas)
 const sendMessage = async () => {
@@ -56,7 +70,7 @@ Si la question concerne plusieurs informations, donne uniquement les réponses p
   };
 
   try {
-    const response = await postData('v1/chat/completions', payload, API_KEY);
+    const response = await postData('v1/chat/completions', payload);
     if (response.choices && response.choices.length > 0) {
       const assistantMessage = response.choices[0].message.content;
       simulateTyping(assistantMessage);
@@ -93,7 +107,7 @@ const simulateTyping = (text) => {
       messages.value.push({ role: 'assistant', content: typingMessage.value });
       typingMessage.value = '';
     }
-  }, 5); // Délai de 50ms entre chaque caractère
+  }, 7); // Délai de 50ms entre chaque caractère
 };
 
 // Fonction pour annuler la saisie en cours
@@ -121,13 +135,21 @@ const renderMarkdown = (content) => {
 
     <div ref="chatWindow" class="chat-window">
       <div v-for="(message, index) in messages" :key="index" class="message" :class="message.role">
-        <div class="bubble" v-html="message.role === 'assistant' ? renderMarkdown(message.content) : message.content"></div>
+        <div class="bubble">
+          <!-- Utilisation de v-html pour la mise en forme Markdown si le message est de type 'assistant' -->
+          <div v-html="message.role === 'assistant' ? renderMarkdown(message.content) : message.content"></div>
+          <!-- Bouton Copier pour les messages de type 'assistant' -->
+          <button class="copy-button" v-if="message.role === 'assistant'" @click="copyToClipboard(message.content)">
+            Copier
+          </button>
+        </div>
       </div>
       <!-- Affichage de l'effet de frappe -->
       <div v-if="typingMessage" class="message assistant">
         <div class="bubble" v-html="renderMarkdown(typingMessage)"></div>
       </div>
     </div>
+
 
     <div class="input-container">
       <input 
@@ -240,22 +262,28 @@ const renderMarkdown = (content) => {
   padding: 0;
 }
 
-.copy-button {
-  position: absolute;
-  right: 0.5rem;
-  top: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: black;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: background 0.2s;
+.code-block-wrapper {
+  position: relative;
+  margin: 1rem 0;
 }
 
-.copy-button:hover {
+.copy-code-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-code-btn:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
 
 /* Input */
 .input-container {

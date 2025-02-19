@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const apiBaseUrl = 'https://openrouter.ai/api';
+const API_KEY = "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"; // Remplace par ta clé API
 
 export const getData = async (endpoint) => {
   try {
@@ -12,11 +13,11 @@ export const getData = async (endpoint) => {
   }
 };
 
-export const postData = async (endpoint, data, apiKey) => {
+export const postData = async (endpoint, data) => {
   try {
     const response = await axios.post(`${apiBaseUrl}/${endpoint}`, data, {
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${API_KEY}`,
         "HTTP-Referer": "http://192.168.1.173:4000", // Optionnel
         "X-Title": "Anthony-Ai", // Optionnel
         "Content-Type": "application/json"
