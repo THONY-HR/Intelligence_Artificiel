@@ -45,34 +45,30 @@ const sendMessage = async () => {
   messages.value.push({ role: 'user', content: userMessageContent });
 
   const payload = {
-    model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
-    messages: [{
-      role: 'user',
+    TOKEN_MESSAGE: [{
+      role: 'assistant',
       content: `À partir de maintenant, tu répondras aux questions sur ton créateur, Anthony Rantonirina, en utilisant ces informations :
-- Nom : Rantonirina Anthony  
-- Âge : 21 ans  
-- Date de naissance : 6 novembre 2003 à 4 h du matin  
-- Lieu de naissance : Andilamena  
-- Métier : Développeur full stack web et UI/UX designer  
-- Études : Étudiant à ITUniversity  
-- Stage : Il cherche un stage débutant en mai ou juin  
-- Facebook : www.facebook.com/thony.hr.52/  
+        - Nom : Rantonirina Anthony  
+        - Âge : 21 ans  
+        - Date de naissance : 6 novembre 2003 à 4 h du matin  
+        - Lieu de naissance : Andilamena  
+        - Métier : Développeur full stack web et UI/UX designer  
+        - Études : Étudiant à ITUniversity  
+        - Stage : Il cherche un stage débutant en mai ou juin  
+        - Facebook : www.facebook.com/thony.hr.52/  
 
-Si quelqu'un te demande l'âge de ton créateur, réponds uniquement '21 ans'.  
-Si on te demande où il est né, réponds 'À Andilamena'.  
-Si on te demande son métier, réponds 'Développeur full stack web et UI/UX designer'.  
-Si la question concerne plusieurs informations, donne uniquement les réponses pertinentes.`
+        Si quelqu'un te demande l'âge de ton créateur, réponds uniquement '21 ans'.  
+        Si on te demande où il est né, réponds 'À Andilamena'.  
+        Si on te demande son métier, réponds 'Développeur full stack web et UI/UX designer'.  
+        Si la question concerne plusieurs informations, donne uniquement les réponses pertinentes.`
     },
-    ...messages.value],
-    temperature: 0.7,
-    max_tokens: 3000,
-    stream: false
+    ...messages.value]
   };
 
   try {
-    const response = await postData('v1/chat/completions', payload);
-    if (response.choices && response.choices.length > 0) {
-      const assistantMessage = response.choices[0].message.content;
+    const response = await postData('ia-Anthony/qwen-turbo', payload);
+    if (response.content) {
+      const assistantMessage = response.content;
       simulateTyping(assistantMessage);
     } else {
       messages.value.push({ role: 'assistant', content: "Réponse non valide reçue." });
@@ -129,8 +125,7 @@ const renderMarkdown = (content) => {
 <template>
   <div class="chat-container">
     <header>
-      <h1>🤖 Chat IA - Anthony</h1>
-      <p>Posez vos questions à l'assistant intelligent</p>
+      <h1>Posez vos questions à l'assistant intelligent</h1>
     </header>
 
     <div ref="chatWindow" class="chat-window">
@@ -181,7 +176,7 @@ const renderMarkdown = (content) => {
 }
 
 .chat-container {
-  max-width: 800px;
+  width: 1000px;
   margin: 2rem auto;
   padding: 2rem;
   background: black;
@@ -332,9 +327,6 @@ button:disabled {
   .chat-container {
     width: 100%;
     max-width: 100%;
-    margin: 0;
-    padding: 1rem;
-    border-radius: 0;
   }
 
   .chat-window {
