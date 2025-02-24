@@ -53,7 +53,7 @@ const sendMessage = async () => {
   };
 
   try {
-    const response = await postData('ia-Anthony/qwen-turbo', payload);
+    const response = await postData('ia-Anthony/deepseek-32B', payload);
     if (response.content) {
       const assistantMessage = response.content;
       simulateTyping(assistantMessage);
