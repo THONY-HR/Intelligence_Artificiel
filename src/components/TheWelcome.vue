@@ -47,20 +47,7 @@ const sendMessage = async () => {
   const payload = {
     TOKEN_MESSAGE: [{
       role: 'assistant',
-      content: `À partir de maintenant, tu répondras aux questions sur ton créateur, Anthony Rantonirina, en utilisant ces informations :
-        - Nom : Rantonirina Anthony  
-        - Âge : 21 ans  
-        - Date de naissance : 6 novembre 2003 à 4 h du matin  
-        - Lieu de naissance : Andilamena  
-        - Métier : Développeur full stack web et UI/UX designer  
-        - Études : Étudiant à ITUniversity  
-        - Stage : Il cherche un stage débutant en mai ou juin  
-        - Facebook : www.facebook.com/thony.hr.52/  
-
-        Si quelqu'un te demande l'âge de ton créateur, réponds uniquement '21 ans'.  
-        Si on te demande où il est né, réponds 'À Andilamena'.  
-        Si on te demande son métier, réponds 'Développeur full stack web et UI/UX designer'.  
-        Si la question concerne plusieurs informations, donne uniquement les réponses pertinentes.`
+      content: `ton créateu est Anthony Rantonirina`
     },
     ...messages.value]
   };
